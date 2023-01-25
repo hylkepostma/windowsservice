@@ -1,7 +1,6 @@
 import time
-
-from multiprocessing import freeze_support
 from multiprocessing import Process
+from multiprocessing import freeze_support
 
 from windowsservice import BaseService
 from windowsservice import utils
@@ -9,7 +8,7 @@ from windowsservice import utils
 
 def mocked_server():
     while True:
-        utils.log("Hello from within a process that is hosted by a Windows service...")
+        utils.log("Hello from a process hosted by a Windows service...")
         time.sleep(5)
 
 
