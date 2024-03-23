@@ -80,9 +80,15 @@ The windowsservice package depends on [pywin32](https://github.com/mhammond/pywi
         self.is_running = False
      ```
 
-5. Call the `parse_command_line` class method from the module's entry point.
-This handles command-line arguments for installing, starting, stopping,
+5. Call the `parse_command_line` class method from the module's entry point. This handles command-line arguments for installing, starting, stopping,
 and debugging the service.
+
+    For example:
+
+    ```python
+    if __name__ == "__main__":
+        ExampleService.parse_command_line()
+    ```
 
 ### Examples
 

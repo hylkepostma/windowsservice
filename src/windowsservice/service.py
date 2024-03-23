@@ -1,14 +1,14 @@
 import pathlib
 import sys
+from abc import ABC, abstractmethod
 
 import pywintypes
 import servicemanager
-import win32event
 import win32service
 import win32serviceutil
 
 
-class BaseService(win32serviceutil.ServiceFramework):
+class BaseService(ABC, win32serviceutil.ServiceFramework):
     """`BaseService` is a base class for creating a Windows service in Python.
 
     Steps to use:
@@ -19,9 +19,9 @@ class BaseService(win32serviceutil.ServiceFramework):
         from windowsservice import BaseService
         ```
 
-    2. Create a new subclass that inherits from the `BaseService` class.
+    2. Create a new class that inherits from the `BaseService` class.
 
-    3. Define the following three class variables in the subclass:
+    3. Define the following three class variables:
 
         - `_svc_name_`: A unique identifier for your service.
         - `_svc_display_name_`: The name shown in the service control manager.
@@ -35,7 +35,7 @@ class BaseService(win32serviceutil.ServiceFramework):
         _svc_description_ = "This is my custom Windows service."
         ```
 
-    4. Override the following methods in the subclass:
+    4. Implement the following abstract methods:
 
         - `start(self)`: This method is invoked when the service starts. Override
         this to add setup code, such as initializing a running condition.
@@ -64,6 +64,14 @@ class BaseService(win32serviceutil.ServiceFramework):
     5. Call the `parse_command_line` class method from the module's entry point.
     This handles command-line arguments for installing, starting, stopping,
     and debugging the service.
+
+        For example:
+
+        ```python
+        if __name__ == "__main__":
+            ExampleService.parse_command_line()
+        ```
+
     """
 
     _svc_name_ = "PythonWindowsService"
@@ -95,27 +103,51 @@ class BaseService(win32serviceutil.ServiceFramework):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
         self.stop()
 
+    @abstractmethod
     def start(self):
         """This method is invoked when the service starts.
 
         Override this to add setup code, such as initializing a running condition.
-        """
-        self.stop_event = win32event.CreateEvent(None, 0, 0, None)
 
+        For example:
+
+        ```python
+        def start(self):
+            self.is_running = True
+        ```
+
+        """
+
+    @abstractmethod
     def main(self):
         """This method is invoked after `start`.
 
         Override this to create a run loop, typically based on a running condition.
-        """
-        win32event.WaitForSingleObject(self.stop_event, win32event.INFINITE)
 
+        For example:
+
+        ```python
+        def main(self):
+            while self.is_running:
+                time.sleep(5)
+        ```
+        """
+
+    @abstractmethod
     def stop(self):
         """This method is invoked when the service stops.
 
         Override this to add cleanup code, such as releasing resources or
         to invalidate a running condition.
+
+        For example:
+
+        ```python
+        def stop(self):
+            self.is_running = False
+        ```
+
         """
-        win32event.SetEvent(self.stop_event)
 
     @classmethod
     def parse_command_line(cls):
