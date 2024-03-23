@@ -10,19 +10,11 @@ The key features are:
 
 ## Getting ready
 
-Create and activate a virtual environment named `venv`:
+Create and activate a virtual environment:
 
 ```cli
 python -m venv venv
 ```
-
-or
-
-```cli
-py -3.11 -m venv venv
-```
-
-and
 
 ```cli
 .\venv\Scripts\activate
