@@ -1,12 +1,11 @@
-name: Automatic Release
+name: Publish Python Package
 
 on:
-  push:
-    branches:
-      - main
+  release:
+    types: [published]
 
 jobs:
-  release:
+  build:
     runs-on: windows-latest
     steps:
     - name: Checkout code
@@ -22,14 +21,28 @@ jobs:
         python -m pip install --upgrade pip
         pip install hatch
 
-    - name: Set git user
+    - name: Build with Hatch
       run: |
-        git config user.name "$(git log -1 --pretty=format:'%an')"
-        git config user.email "$(git log -1 --pretty=format:'%ae')"
+        python -m hatch build
 
-    - name: Release with Hatch
-      run: |
-        python -m hatch release --tag
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: dist
+        path: dist
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: dist
+        path: dist
+
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
