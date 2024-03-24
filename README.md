@@ -10,13 +10,13 @@ The key features are:
 
 ## Getting ready
 
-Create and activate a virtual environment named `venv`:
+Create and activate a virtual environment:
 
-```powershell
+```cli
 python -m venv venv
 ```
 
-```powershell
+```cli
 .\venv\Scripts\activate
 ```
 
@@ -24,104 +24,142 @@ python -m venv venv
 
 Install the windowsservice package from PyPI:
 
-```powershell
+```cli
 pip install windowsservice
-```
-
-Finally, run the post install script to configure pywin32:
-
-```powershell
-python .\venv\Scripts\pywin32_postinstall.py -install
 ```
 
 The windowsservice package depends on [pywin32](https://github.com/mhammond/pywin32) created by Mark Hammond. Installing the windowsservice package also installs the pywin32 dependency.
 
 ## Coding
 
-1. Import the `BaseService` class: `from windowsservice import BaseService`.
+1. Import the `BaseService` class:
 
-2. Create a new child class that inherits from the `BaseService` class.
+    ```python
+    from windowsservice import BaseService
+    ```
 
-3. Define the following three class variables:
+2. Create a new subclass that inherits from the `BaseService` class.
 
-    1. `_svc_name_` = "NameOfTheWindowsService"
-    2. `_svc_display_name_` = "The display name of the Windows service that will be displayed in service control manager"
-    3. `_svc_description_` = "The description of the Windows service that will be displayed in service control manager"
+3. Define the following three class variables in the subclass:
 
-4. Override the following three methods:
+    - `_svc_name_`: A unique identifier for your service.
+    - `_svc_display_name_`: The name shown in the service control manager.
+    - `_svc_description_`: The description shown in the service control manager.
 
-    1. `def start(self):` Called when the service is asked to start. Override this method to add code that is executed before the service starts, for example to set a running condition.
-    2. `def stop(self):` Called when the service is asked to stop. Override this method to add code that is executed before the service stops, for example to invalidate a running condition.
-    3. `def main(self):` Called right after the start method. Override this method to create a run loop, usually based on the running condition.
+    For example:
 
-5. Call the `parse_command_line` method from the entry point of the module.
+    ```python
+    _svc_name_ = "MyWindowsService"
+    _svc_display_name_ = "My Windows Service"
+    _svc_description_ = "This is my custom Windows service."
+    ```
 
-You can find an example in `example_service.py`:
+4. Override the following methods in the subclass:
+
+     - `start(self)`: This method is invoked when the service starts. Override
+     this to add setup code, such as initializing a running condition.
+
+     - `main(self)`: This method is invoked after `start`. Override this to
+     create a run loop, typically based on a running condition.
+
+     - `stop(self)`: This method is invoked when the service stops. Override
+     this to add cleanup code, such as releasing resources or to invalidate a
+     running condition.
+
+     For example:
+
+     ```python
+    def start(self):
+        self.is_running = True
+
+    def main(self):
+        while self.is_running:
+            time.sleep(5)
+
+    def stop(self):
+        self.is_running = False
+     ```
+
+5. Call the `parse_command_line` class method from the module's entry point. This handles command-line arguments for installing, starting, stopping,
+and debugging the service.
+
+    For example:
+
+    ```python
+    if __name__ == "__main__":
+        ExampleService.parse_command_line()
+    ```
+
+### Examples
+
+Basic example ([example_service.py](examples/example_service.py)):
 
 ```python
 import time
 
-from windowsservice import BaseService
-from windowsservice import utils
+from windowsservice import BaseService, utils
 
 
 class ExampleService(BaseService):
-    _svc_name_ = "PythonExampleWindowsService"
-    _svc_display_name_ = "Python Example Windows service"
-    _svc_description_ = "This is a Windows service in Python!"
+    """Example Windows service in Python."""
 
-    def __init__(self, args):
-        super().__init__(args)
-        self.is_running = None
+    _svc_name_ = "PythonExampleWindowsService"
+    _svc_display_name_ = "Python Example Windows Service"
+    _svc_description_ = "Example Windows service in Python"
 
     def start(self):
         self.is_running = True
-
-    def stop(self):
-        self.is_running = False
 
     def main(self):
         while self.is_running:
             utils.log(f"{self._svc_display_name_} is running...")
             time.sleep(5)
 
+    def stop(self):
+        self.is_running = False
+
 
 if __name__ == "__main__":
     ExampleService.parse_command_line()
 ```
 
-There is also an example that demonstrates support for `multiprocessing` in `example_service_multiprocessing.py`:
+Example that demonstrates support for `multiprocessing` ([example_service_multiprocessing.py](examples/example_service_multiprocessing.py)):
 
 ```python
 import time
-from multiprocessing import Process
-from multiprocessing import freeze_support
+from multiprocessing import Process, freeze_support
 
-from windowsservice import BaseService
-from windowsservice import utils
+from windowsservice import BaseService, utils
 
 
-def mocked_server():
-    while True:
+def stub_server():
+    """
+    A function that simulates a server process hosted by the Windows service.
+
+    This function logs a message every 5 seconds for a total of 100 times.
+    """
+    for _ in range(100):
         utils.log("Hello from a process hosted by a Windows service...")
         time.sleep(5)
 
 
 class ExampleService(BaseService):
+    """Example Windows service in Python."""
+
     _svc_name_ = "PythonExampleWindowsService"
     _svc_display_name_ = "Python Example Windows Service"
-    _svc_description_ = "This is a Windows Service in Python!"
-
-    def __init__(self, args):
-        super().__init__(args)
-        self.server_process = None
+    _svc_description_ = "Example Windows service in Python"
 
     def start(self):
-        self.server_process = Process(target=mocked_server)
+        self.server_process = Process(target=stub_server)
+
+    def main(self):
         self.server_process.start()
+        self.server_process.join()
 
     def stop(self):
-        self.server_process.terminate()
+        if self.server_process:
+            self.server_process.terminate()
 
 
 if __name__ == "__main__":
@@ -131,12 +169,12 @@ if __name__ == "__main__":
 
 ## Usage
 
-For some interactions with a Windows service, you may need administrative privileges, so you must use an elevated command line interface.
+Some interactions with a Windows service may require administrative privileges, so you must use an elevated command line interface.
 
-All the arguments and options can be listed by calling the module:
+All arguments and options can be listed by invoking the module:
 
-```powershell
-python -m windowsservice.example_service
+```cli
+python .\examples\example_service.py
 ```
 
 ```stdout
@@ -160,74 +198,83 @@ Options for 'start' and 'stop' commands only:
 
 If you want to install the service from the `example_service.py` example, run:
 
-```powershell
-python -m windowsservice.example_service install
+```cli
+python .\examples\example_service.py install
 ```
 
-You can also install the service so that it starts automatically when Windows starts:
+```stdout
+Installing service PythonExampleWindowsService
+Service installed
+```
 
-```powershell
-python -m windowsservice.example_service --startup=auto install
+You can also choose to install the service so that it will start automatically when Windows starts:
+
+```cli
+python .\examples\example_service.py --startup=auto install
 ```
 
 ### Start the service
 
 To start/stop the service you can now use the [service control manager](https://docs.microsoft.com/en-us/windows/win32/services/service-control-manager).
 
-Or, from the command line interface, run:
+Or, from the command line interface, you can run:
 
-```powershell
-python -m windowsservice.example_service start
+```cli
+python .\examples\example_service.py start
 ```
 
 To start the service in debug mode, run:
 
-```powershell
-python -m windowsservice.example_service debug
+```cli
+python .\examples\example_service.py debug
 ```
 
-To inspect if the service is working, make sure it is running and then have a look at the standard output stream (when running in debug mode) and/or the Windows Event Viewer. You should see a message every 5 seconds.
+To verify that the service is working, make sure it is running, and then look into the Windows Event Viewer or, if it is running in debug mode, look at the standard output stream. You should see a message every 5 seconds.
 
 ### Remove the service
 
 To remove the service, run:
 
-```powershell
-python -m windowsservice.example_service remove
+```cli
+python .\examples\example_service.py remove
 ```
 
 ## PyInstaller
 
-You can use PyInstaller to bundle the service into a convenient stand-alone executable.
+To bundle the service into a convenient standalone executable, you can use PyInstaller.
 
 ### Install PyInstaller
 
 Install [PyInstaller](https://www.pyinstaller.org/) inside your activated virtual environment:
 
-```powershell
+```cli
 pip install pyinstaller
 ```
 
 ### Create executable
 
-To create a stand-alone (**one-file**) executable, use the `pyinstaller` command:
+To create a standalone (**one-file**) executable, use the `pyinstaller` command:
 
-```powershell
-pyinstaller windowsservice\example_service.py --clean --noupx --onefile --noconfirm --hidden-import=win32timezone
+```cli
+pyinstaller .\examples\example_service.py --clean --noupx --onefile --noconfirm --hidden-import=win32timezone
 ```
 
-The resulting `example_service.exe` executable can be found in the `dist` directory.
+The resulting `example_service.exe` executable can be found in the `.\dist` directory.
 
-The arguments and options of `example_service.exe` are the same as above. For example, to install the service, run:
+You can use this executable with the same arguments and options as discussed above. For example, to install the service, run:
 
-```powershell
-example_service.exe install
+```cli
+.\dist\example_service.exe install
 ```
 
 You can also create a **one-folder** bundle. Because the executable does not have to be unpacked first in a temporary location, this has the advantage of making the service start faster.
 
-```powershell
-pyinstaller windowsservice\example_service.py --clean --noupx --onedir --noconfirm --hidden-import=win32timezone
+```cli
+pyinstaller .\examples\example_service.py --clean --noupx --onedir --noconfirm --hidden-import=win32timezone
 ```
 
 In this case, the resulting executable can be found in the `dist\example_service` directory.
+
+### Acknowledgement
+
+This package utilizes the [pywin32](https://github.com/mhammond/pywin32) library, a collection of Python extensions for Windows. The maintenance and development of this library is credited to Mark Hammond and others in the Python community. Their contributions enable the development of Windows services in Python. Please note that the `windowsservice` package does not aim to replace `pywin32` or `win32serviceutil.ServiceFramework`, it's just here to make it a little bit easier to use.
