@@ -14,17 +14,17 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.9'
+        python-version: '3.11'
         architecture: 'x64'
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install hatchling
+        pip install hatch
 
     - name: Build with Hatch
       run: |
-        hatch build
+        python -m hatch build
 
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
