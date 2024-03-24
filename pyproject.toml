@@ -36,7 +36,7 @@ dependencies = [
 dynamic = ["version"]
 
 [tool.hatch.version]
-path = "src/windowsservice/__init__.py"
+path = "src/windowsservice/__about__.py"
 
 [project.optional-dependencies]
 test = [
