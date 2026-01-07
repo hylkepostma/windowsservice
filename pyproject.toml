@@ -6,11 +6,9 @@ build-backend = "hatchling.build"
 name = "windowsservice"
 description = "A Python package for building Windows services."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.13"
 license = "MIT"
-authors = [
-    { name = "Hylke Postma", email = "info@hylkepostma.nl" },
-]
+authors = [{ name = "Hylke Postma", email = "info@hylkepostma.nl" }]
 keywords = [
     "multiprocessing",
     "pyinstaller",
@@ -25,28 +23,19 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: Microsoft :: Windows",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Build Tools",
 ]
-dependencies = [
-    "pywin32==306",
-]
+dependencies = ["pywin32==311"]
 dynamic = ["version"]
 
 [tool.hatch.version]
 path = "src/windowsservice/__about__.py"
 
 [project.optional-dependencies]
-test = [
-    "pytest >=7.2.0,<8.0.0",
-    "pyinstaller >=6.5.0, <7"
-]
-dev = [
-    "ruff",
-    "black",
-]
+test = ["pytest >=7.2.0,<10.0.0", "pyinstaller >=6.5.0, <7"]
+dev = ["ruff", "black"]
 all = ["windowsservice[test, dev]"]
 
 [project.urls]
